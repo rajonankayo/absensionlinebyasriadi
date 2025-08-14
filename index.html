@@ -3170,6 +3170,11 @@ function handleRequest(e) {
                 return Promise.reject('No attendance sheet URL');
             }
 
+            if (!attendanceData || attendanceData.length === 0) {
+                showNotification('Tidak ada data absensi untuk disinkronkan!', 'error');
+                return Promise.reject('No attendance data');
+            }
+
             showNotification('Sedang menyinkronkan data absensi...', 'info');
 
             const payload = {
@@ -3178,236 +3183,311 @@ function handleRequest(e) {
                 attendanceData: attendanceData
             };
 
-            console.log('🔄 Syncing attendance data:', payload);
+            console.log('🔄 Syncing attendance data:', {
+                action: payload.action,
+                sheetUrl: payload.attendanceSheetUrl,
+                recordCount: payload.attendanceData.length,
+                webAppUrl: webAppUrl
+            });
 
-            // Enhanced sync with multiple methods
+            // Enhanced sync with multiple methods and better error handling
             const tryMultipleMethods = async () => {
                 let lastError = null;
 
-                // Method 1: POST with JSON (no-cors mode)
+                // Method 1: POST with JSON and CORS
                 try {
-                    console.log('🔄 Mencoba POST dengan JSON (no-cors)...');
+                    console.log('🔄 Mencoba POST dengan JSON (CORS)...');
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
                     const response = await fetch(webAppUrl, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json, text/plain, */*'
                         },
                         body: JSON.stringify(payload),
-                        mode: 'no-cors',
+                        mode: 'cors',
                         credentials: 'omit',
                         signal: controller.signal
                     });
 
                     clearTimeout(timeoutId);
-                    console.log('📊 POST response:', response);
+                    console.log('📊 POST CORS response status:', response.status);
 
-                    // For no-cors mode, we can't read the response, so assume success
-                    if (response.type === 'opaque') {
-                        console.log('✅ POST request sent successfully (no-cors mode)');
-                        showNotification(`Data absensi berhasil disinkronkan! (${attendanceData.length} record)`, 'success');
-                        return Promise.resolve({ success: true, message: 'Data berhasil dikirim' });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
 
-                } catch (postError) {
-                    console.error('❌ POST no-cors method failed:', postError);
-                    lastError = postError;
+                    const text = await response.text();
+                    console.log('📄 POST CORS response text:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
 
-                    // Method 2: POST with CORS
+                    let data;
                     try {
-                        console.log('🔄 Mencoba POST dengan CORS...');
+                        data = JSON.parse(text);
+                    } catch (parseError) {
+                        console.log('JSON parse failed, checking for success indicators...');
+                        if (text.includes('success') || text.includes('berhasil') || text.includes('OK') || text.includes('disinkronkan')) {
+                            data = { success: true, message: `Data absensi berhasil disinkronkan! (${attendanceData.length} record)` };
+                        } else {
+                            throw new Error('Response tidak valid dari POST CORS: ' + text.substring(0, 200));
+                        }
+                    }
+
+                    if (data.success) {
+                        console.log('✅ POST CORS sync berhasil:', data.message);
+                        showNotification(data.message || `Data absensi berhasil disinkronkan! (${attendanceData.length} record)`, 'success');
+                        return Promise.resolve(data);
+                    } else {
+                        throw new Error(data.message || 'POST CORS gagal: ' + JSON.stringify(data));
+                    }
+
+                } catch (corsError) {
+                    console.error('❌ POST CORS method failed:', corsError);
+                    lastError = corsError;
+
+                    // Method 2: POST with no-cors mode
+                    try {
+                        console.log('🔄 Mencoba POST dengan no-cors mode...');
                         const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 20000);
+                        const timeoutId = setTimeout(() => controller.abort(), 25000);
 
                         const response = await fetch(webAppUrl, {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json, text/plain, */*'
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(payload),
-                            mode: 'cors',
+                            mode: 'no-cors',
                             credentials: 'omit',
                             signal: controller.signal
                         });
 
                         clearTimeout(timeoutId);
-                        console.log('📊 POST CORS response status:', response.status);
+                        console.log('📊 POST no-cors response:', response);
 
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        // For no-cors mode, we can't read the response, but if no error thrown, assume success
+                        if (response.type === 'opaque') {
+                            console.log('✅ POST no-cors request sent successfully');
+                            showNotification(`Data absensi berhasil dikirim ke Google Sheets! (${attendanceData.length} record)`, 'success');
+                            return Promise.resolve({ success: true, message: 'Data berhasil dikirim (no-cors)' });
                         }
 
-                        const text = await response.text();
-                        console.log('📄 POST CORS response text:', text);
+                    } catch (noCorsError) {
+                        console.error('❌ POST no-cors method failed:', noCorsError);
+                        lastError = noCorsError;
 
-                        let data;
+                        // Method 3: POST with form data
                         try {
-                            data = JSON.parse(text);
-                        } catch {
-                            if (text.includes('success') || text.includes('berhasil') || text.includes('OK')) {
-                                data = { success: true, message: `Data absensi berhasil disinkronkan! (${attendanceData.length} record)` };
-                            } else {
-                                throw new Error('Response tidak valid dari POST CORS');
-                            }
-                        }
-
-                        if (data.success) {
-                            console.log('✅ POST CORS sync berhasil:', data.message);
-                            showNotification(data.message || `Data absensi berhasil disinkronkan! (${attendanceData.length} record)`, 'success');
-                            return Promise.resolve(data);
-                        } else {
-                            throw new Error(data.message || 'POST CORS gagal');
-                        }
-
-                    } catch (corsError) {
-                        console.error('❌ POST CORS method failed:', corsError);
-                        lastError = corsError;
-
-                        // Method 3: GET with parameters
-                        try {
-                            console.log('🔄 Mencoba GET dengan parameters...');
-                            const params = new URLSearchParams({
-                                action: 'syncAttendance',
-                                attendanceSheetUrl: attendanceSheetUrl,
-                                data: JSON.stringify({ attendanceData: attendanceData })
-                            });
-
-                            const getUrl = `${webAppUrl}?${params}`;
-                            console.log('🔗 GET URL length:', getUrl.length);
-
-                            // Check URL length limit (Google has ~8KB limit for GET requests)
-                            if (getUrl.length > 8000) {
-                                throw new Error('URL too long for GET request');
-                            }
+                            console.log('🔄 Mencoba POST dengan form data...');
+                            const formData = new FormData();
+                            formData.append('payload', JSON.stringify(payload));
 
                             const controller = new AbortController();
-                            const timeoutId = setTimeout(() => controller.abort(), 20000);
+                            const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-                            const response = await fetch(getUrl, {
-                                method: 'GET',
+                            const response = await fetch(webAppUrl, {
+                                method: 'POST',
+                                body: formData,
                                 mode: 'cors',
                                 credentials: 'omit',
                                 signal: controller.signal
                             });
 
                             clearTimeout(timeoutId);
-                            console.log('📊 GET response status:', response.status);
+                            console.log('📊 POST form response status:', response.status);
 
                             if (!response.ok) {
                                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                             }
 
                             const text = await response.text();
-                            console.log('📄 GET response text:', text);
+                            console.log('📄 POST form response text:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
 
                             let data;
                             try {
                                 data = JSON.parse(text);
-                            } catch {
-                                if (text.includes('success') || text.includes('berhasil') || text.includes('OK')) {
+                            } catch (parseError) {
+                                if (text.includes('success') || text.includes('berhasil') || text.includes('OK') || text.includes('disinkronkan')) {
                                     data = { success: true, message: `Data absensi berhasil disinkronkan! (${attendanceData.length} record)` };
                                 } else {
-                                    throw new Error('Response tidak valid dari GET');
+                                    throw new Error('Response tidak valid dari POST form: ' + text.substring(0, 200));
                                 }
                             }
 
                             if (data.success) {
-                                console.log('✅ GET sync berhasil:', data.message);
+                                console.log('✅ POST form sync berhasil:', data.message);
                                 showNotification(data.message || `Data absensi berhasil disinkronkan! (${attendanceData.length} record)`, 'success');
                                 return Promise.resolve(data);
                             } else {
-                                throw new Error(data.message || 'GET gagal');
+                                throw new Error(data.message || 'POST form gagal: ' + JSON.stringify(data));
                             }
 
-                        } catch (getError) {
-                            console.error('❌ GET method failed:', getError);
-                            lastError = getError;
+                        } catch (formError) {
+                            console.error('❌ POST form method failed:', formError);
+                            lastError = formError;
 
-                            // Method 4: Iframe method (final fallback)
+                            // Method 4: GET with parameters (if data is small enough)
                             try {
-                                console.log('🔄 Menggunakan metode iframe sebagai fallback terakhir...');
+                                console.log('🔄 Mencoba GET dengan parameters...');
 
-                                return new Promise((resolve, reject) => {
-                                    const iframe = document.createElement('iframe');
-                                    iframe.style.display = 'none';
-                                    iframe.name = 'sync-frame-' + Date.now();
-                                    let completed = false;
+                                // Create smaller payload for GET request
+                                const getPayload = {
+                                    action: 'syncAttendance',
+                                    attendanceSheetUrl: attendanceSheetUrl,
+                                    attendanceData: attendanceData.slice(0, 50) // Limit to first 50 records for GET
+                                };
 
-                                    const cleanup = () => {
-                                        if (!completed) {
-                                            completed = true;
-                                            try {
-                                                if (document.body.contains(iframe)) {
-                                                    document.body.removeChild(iframe);
-                                                }
-                                            } catch (cleanupError) {
-                                                console.error('Cleanup error:', cleanupError);
-                                            }
-                                        }
-                                    };
-
-                                    iframe.onload = () => {
-                                        console.log('✅ Iframe sync completed');
-                                        setTimeout(() => {
-                                            cleanup();
-                                            showNotification(`Data absensi telah dikirim ke Google Sheets (${attendanceData.length} record). Periksa sheet untuk memastikan.`, 'success');
-                                            resolve({ success: true, message: 'Data dikirim via iframe' });
-                                        }, 3000);
-                                    };
-
-                                    iframe.onerror = () => {
-                                        console.error('❌ Iframe error');
-                                        cleanup();
-                                        reject(new Error('Iframe method failed'));
-                                    };
-
-                                    // Timeout with success assumption
-                                    setTimeout(() => {
-                                        if (!completed) {
-                                            console.log('⏰ Iframe timeout, assuming success');
-                                            cleanup();
-                                            showNotification(`Data absensi telah dikirim ke Google Sheets (${attendanceData.length} record, timeout). Periksa sheet untuk memastikan.`, 'info');
-                                            resolve({ success: true, message: 'Data dikirim (timeout)' });
-                                        }
-                                    }, 15000);
-
-                                    // Create form to submit to iframe
-                                    const form = document.createElement('form');
-                                    form.method = 'POST';
-                                    form.action = webAppUrl;
-                                    form.target = iframe.name;
-                                    form.style.display = 'none';
-
-                                    // Add payload as form data
-                                    const input = document.createElement('input');
-                                    input.type = 'hidden';
-                                    input.name = 'payload';
-                                    input.value = JSON.stringify(payload);
-                                    form.appendChild(input);
-
-                                    document.body.appendChild(iframe);
-                                    document.body.appendChild(form);
-                                    form.submit();
-
-                                    // Clean up form
-                                    setTimeout(() => {
-                                        if (document.body.contains(form)) {
-                                            document.body.removeChild(form);
-                                        }
-                                    }, 1000);
+                                const params = new URLSearchParams({
+                                    action: getPayload.action,
+                                    attendanceSheetUrl: getPayload.attendanceSheetUrl,
+                                    data: JSON.stringify({ attendanceData: getPayload.attendanceData })
                                 });
 
-                            } catch (iframeError) {
-                                console.error('❌ Iframe method failed:', iframeError);
-                                lastError = iframeError;
+                                const getUrl = `${webAppUrl}?${params}`;
+                                console.log('🔗 GET URL length:', getUrl.length);
 
-                                // Final error
-                                console.error('❌ Semua metode sync gagal');
-                                showNotification(`Gagal menyinkronkan data absensi: ${lastError.message || lastError}`, 'error');
-                                return Promise.reject(lastError || new Error('All sync methods failed'));
+                                // Check URL length limit
+                                if (getUrl.length > 7000) {
+                                    throw new Error('Data terlalu besar untuk GET request');
+                                }
+
+                                const controller = new AbortController();
+                                const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+                                const response = await fetch(getUrl, {
+                                    method: 'GET',
+                                    mode: 'cors',
+                                    credentials: 'omit',
+                                    signal: controller.signal
+                                });
+
+                                clearTimeout(timeoutId);
+                                console.log('📊 GET response status:', response.status);
+
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                }
+
+                                const text = await response.text();
+                                console.log('📄 GET response text:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
+
+                                let data;
+                                try {
+                                    data = JSON.parse(text);
+                                } catch (parseError) {
+                                    if (text.includes('success') || text.includes('berhasil') || text.includes('OK') || text.includes('disinkronkan')) {
+                                        data = { success: true, message: `Sebagian data absensi berhasil disinkronkan! (${getPayload.attendanceData.length} dari ${attendanceData.length} record)` };
+                                    } else {
+                                        throw new Error('Response tidak valid dari GET: ' + text.substring(0, 200));
+                                    }
+                                }
+
+                                if (data.success) {
+                                    console.log('✅ GET sync berhasil (partial):', data.message);
+                                    if (getPayload.attendanceData.length < attendanceData.length) {
+                                        showNotification(`Sebagian data berhasil disinkronkan (${getPayload.attendanceData.length}/${attendanceData.length}). Gunakan metode lain untuk data lengkap.`, 'info');
+                                    } else {
+                                        showNotification(data.message || `Data absensi berhasil disinkronkan! (${attendanceData.length} record)`, 'success');
+                                    }
+                                    return Promise.resolve(data);
+                                } else {
+                                    throw new Error(data.message || 'GET gagal: ' + JSON.stringify(data));
+                                }
+
+                            } catch (getError) {
+                                console.error('❌ GET method failed:', getError);
+                                lastError = getError;
+
+                                // Method 5: Iframe method (final fallback)
+                                try {
+                                    console.log('🔄 Menggunakan metode iframe sebagai fallback terakhir...');
+
+                                    return new Promise((resolve, reject) => {
+                                        const iframe = document.createElement('iframe');
+                                        iframe.style.display = 'none';
+                                        iframe.name = 'sync-frame-' + Date.now();
+                                        let completed = false;
+
+                                        const cleanup = () => {
+                                            if (!completed) {
+                                                completed = true;
+                                                try {
+                                                    if (document.body.contains(iframe)) {
+                                                        document.body.removeChild(iframe);
+                                                    }
+                                                } catch (cleanupError) {
+                                                    console.error('Cleanup error:', cleanupError);
+                                                }
+                                            }
+                                        };
+
+                                        iframe.onload = () => {
+                                            console.log('✅ Iframe sync completed');
+                                            setTimeout(() => {
+                                                cleanup();
+                                                showNotification(`Data absensi telah dikirim ke Google Sheets (${attendanceData.length} record). Periksa sheet untuk memastikan tersimpan.`, 'success');
+                                                resolve({ success: true, message: 'Data dikirim via iframe' });
+                                            }, 3000);
+                                        };
+
+                                        iframe.onerror = () => {
+                                            console.error('❌ Iframe error');
+                                            cleanup();
+                                            reject(new Error('Iframe method failed'));
+                                        };
+
+                                        // Timeout with success assumption
+                                        setTimeout(() => {
+                                            if (!completed) {
+                                                console.log('⏰ Iframe timeout, assuming success');
+                                                cleanup();
+                                                showNotification(`Data absensi telah dikirim ke Google Sheets (${attendanceData.length} record, timeout). Periksa sheet untuk memastikan.`, 'info');
+                                                resolve({ success: true, message: 'Data dikirim (timeout)' });
+                                            }
+                                        }, 20000);
+
+                                        // Create form to submit to iframe
+                                        const form = document.createElement('form');
+                                        form.method = 'POST';
+                                        form.action = webAppUrl;
+                                        form.target = iframe.name;
+                                        form.style.display = 'none';
+
+                                        // Add payload as form data
+                                        const input = document.createElement('input');
+                                        input.type = 'hidden';
+                                        input.name = 'payload';
+                                        input.value = JSON.stringify(payload);
+                                        form.appendChild(input);
+
+                                        document.body.appendChild(iframe);
+                                        document.body.appendChild(form);
+                                        form.submit();
+
+                                        // Clean up form
+                                        setTimeout(() => {
+                                            if (document.body.contains(form)) {
+                                                document.body.removeChild(form);
+                                            }
+                                        }, 1000);
+                                    });
+
+                                } catch (iframeError) {
+                                    console.error('❌ Iframe method failed:', iframeError);
+                                    lastError = iframeError;
+
+                                    // Final error with detailed troubleshooting
+                                    console.error('❌ Semua metode sync gagal');
+                                    console.error('Troubleshooting info:');
+                                    console.error('- Web App URL:', webAppUrl);
+                                    console.error('- Sheet URL:', attendanceSheetUrl);
+                                    console.error('- Data count:', attendanceData.length);
+                                    console.error('- Last error:', lastError);
+
+                                    showNotification(`Gagal menyinkronkan data absensi. Periksa konfigurasi Apps Script dan coba lagi.`, 'error');
+                                    return Promise.reject(lastError || new Error('All sync methods failed'));
+                                }
                             }
                         }
                     }
@@ -6301,7 +6381,7 @@ function handleRequest(e) {
             }, 3000);
         }
     </script>
-    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ef7237254ff8ec',t:'MTc1NTE2Mzk1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ef83b0d3343fdd',t:'MTc1NTE2NDY3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
 
 </html>
