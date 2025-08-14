@@ -448,7 +448,7 @@
                                     Nama Siswa</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nis</th>
+                                    NIS</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Mata Pelajaran</th>
@@ -522,7 +522,7 @@
                             <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Nis</th>
+                                    NIS</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Nama Lengkap</th>
@@ -571,7 +571,7 @@
                     <form id="studentForm" onsubmit="saveStudent(event)">
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nis *</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">NIS *</label>
                                 <input type="text" id="studentId" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Contoh: 2024001">
@@ -715,19 +715,21 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Apps Script Deployment ID
                                 *</label>
-                            <input type="text" id="deploymentId"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            <input type="text" id="deploymentId" readonly
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                 placeholder="AKfycbx...">
-                            <p class="text-xs text-gray-500 mt-1">ID deployment dari Google Apps Script web app</p>
+                            <p class="text-xs text-gray-500 mt-1">ID deployment dari Google Apps Script web app (Sudah
+                                dikonfigurasi)</p>
                         </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Apps Script Web App URL
                                 *</label>
-                            <input type="url" id="webAppUrl"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            <input type="url" id="webAppUrl" readonly
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                 placeholder="https://script.google.com/macros/s/AKfycbx.../exec">
-                            <p class="text-xs text-gray-500 mt-1">URL lengkap web app dari Google Apps Script</p>
+                            <p class="text-xs text-gray-500 mt-1">URL lengkap web app dari Google Apps Script (Sudah
+                                dikonfigurasi)</p>
                         </div>
                     </div>
 
@@ -736,42 +738,47 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Sheet Absensi URL</label>
-                                <input type="url" id="attendanceSheetUrl"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                <input type="url" id="attendanceSheetUrl" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                     placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit#gid=0">
-                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data absensi siswa</p>
+                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data absensi siswa (Sudah
+                                    dikonfigurasi)</p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Data Siswa URL</label>
-                                <input type="url" id="studentsSheetUrl"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                <input type="url" id="studentsSheetUrl" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                     placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit#gid=1">
-                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data siswa</p>
+                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data siswa (Sudah dikonfigurasi)
+                                </p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Data Guru URL</label>
-                                <input type="url" id="teachersSheetUrl"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                <input type="url" id="teachersSheetUrl" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                     placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit#gid=2">
-                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data guru</p>
+                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data guru (Sudah dikonfigurasi)
+                                </p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran URL</label>
-                                <input type="url" id="subjectsSheetUrl"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                <input type="url" id="subjectsSheetUrl" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                     placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit#gid=3">
-                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk mata pelajaran</p>
+                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk mata pelajaran (Sudah
+                                    dikonfigurasi)</p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Data Kelas URL</label>
-                                <input type="url" id="classesSheetUrl"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                <input type="url" id="classesSheetUrl" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                                     placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit#gid=4">
-                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data kelas</p>
+                                <p class="text-xs text-gray-500 mt-1">URL sheet untuk data kelas (Sudah dikonfigurasi)
+                                </p>
                             </div>
 
 
@@ -804,7 +811,7 @@
                         <li><strong>1. Buat Google Sheets baru:</strong>
                             <ul class="ml-4 mt-1 space-y-1">
                                 <li>• Buka Google Sheets dan buat spreadsheet baru</li>
-                                <li>• Buat header di baris pertama: Tanggal | Kelas | Nama Siswa | Nis | Mata
+                                <li>• Buat header di baris pertama: Tanggal | Kelas | Nama Siswa | ID Siswa | Mata
                                     Pelajaran | Status | Jam | Guru</li>
                             </ul>
                         </li>
@@ -1008,7 +1015,7 @@ function handleRequest(e) {
       }
       
       // Ensure headers exist
-      const headers = ['Tanggal', 'Kelas', 'Nama Siswa', 'Nis', 'Mata Pelajaran', 'Status', 'Jam', 'Guru'];
+      const headers = ['Tanggal', 'Kelas', 'Nama Siswa', 'ID Siswa', 'Mata Pelajaran', 'Status', 'Jam', 'Guru'];
       if (!ensureSheetHeaders(sheet, headers)) {
         return ContentService
           .createTextOutput(JSON.stringify({success: false, message: 'Gagal mengatur header sheet'}))
@@ -1063,7 +1070,7 @@ function handleRequest(e) {
       
       try {
         // Ensure headers exist
-        const headers = ['Tanggal', 'Kelas', 'Nama Siswa', 'Nis', 'Mata Pelajaran', 'Status', 'Jam', 'Guru'];
+        const headers = ['Tanggal', 'Kelas', 'Nama Siswa', 'ID Siswa', 'Mata Pelajaran', 'Status', 'Jam', 'Guru'];
         if (!ensureSheetHeaders(sheet, headers)) {
           return ContentService
             .createTextOutput(JSON.stringify({success: false, message: 'Gagal mengatur header sheet'}))
@@ -1122,7 +1129,7 @@ function handleRequest(e) {
       
       // Set header if empty
       if (sheet.getLastRow() === 0) {
-        sheet.getRange(1, 1, 1, 4).setValues([['Nis', 'Nama Lengkap', 'Kelas', 'QR Code']]);
+        sheet.getRange(1, 1, 1, 4).setValues([['ID Siswa', 'Nama Lengkap', 'Kelas', 'QR Code']]);
       }
       
       // Clear existing data (keep header)
@@ -1617,8 +1624,8 @@ function handleRequest(e) {
         
         // Create sample sheets with headers
         const sheetsConfig = [
-          {name: 'Sheet Absensi', headers: ['Tanggal', 'Kelas', 'Nama Siswa', 'Nis', 'Mata Pelajaran', 'Status', 'Jam', 'Guru']},
-          {name: 'Data Siswa', headers: ['Nis', 'Nama Lengkap', 'Kelas', 'QR Code']},
+          {name: 'Sheet Absensi', headers: ['Tanggal', 'Kelas', 'Nama Siswa', 'ID Siswa', 'Mata Pelajaran', 'Status', 'Jam', 'Guru']},
+          {name: 'Data Siswa', headers: ['ID Siswa', 'Nama Lengkap', 'Kelas', 'QR Code']},
           {name: 'Data Guru', headers: ['Username', 'Password', 'Nama Lengkap', 'Role']},
           {name: 'Mata Pelajaran', headers: ['Nama Mata Pelajaran']},
           {name: 'Data Kelas', headers: ['Nama Kelas']},
@@ -1904,9 +1911,7 @@ function handleRequest(e) {
             populateDropdowns();
 
             // Load data from Google Sheets if configured (silent background process)
-            const webAppUrl = localStorage.getItem('webAppUrl') ||
-                (localStorage.getItem('deploymentId') ?
-                    `https://script.google.com/macros/s/${localStorage.getItem('deploymentId')}/exec` : null);
+            const webAppUrl = localStorage.getItem('webAppUrl') || defaultConfig.webAppUrl;
 
             if (webAppUrl) {
                 // Load data silently in background without showing errors on login page
@@ -2976,7 +2981,7 @@ function handleRequest(e) {
                 'Tanggal',
                 'Kelas',
                 'Nama Siswa',
-                'Nis',
+                'ID Siswa',
                 'Mata Pelajaran',
                 'Status',
                 'Jam Pelajaran',
@@ -2991,7 +2996,7 @@ function handleRequest(e) {
                         cells[0].textContent.trim(), // Tanggal
                         cells[1].textContent.trim(), // Kelas
                         cells[2].textContent.trim(), // Nama Siswa
-                        cells[3].textContent.trim(), // Nis
+                        cells[3].textContent.trim(), // ID Siswa
                         cells[4].textContent.trim(), // Mata Pelajaran
                         cells[5].textContent.trim(), // Status (clean from span)
                         cells[6].textContent.trim(), // Jam
@@ -3010,7 +3015,7 @@ function handleRequest(e) {
                 { wch: 12 }, // Tanggal
                 { wch: 10 }, // Kelas
                 { wch: 25 }, // Nama Siswa
-                { wch: 12 }, // Nis
+                { wch: 12 }, // ID Siswa
                 { wch: 18 }, // Mata Pelajaran
                 { wch: 8 },  // Status
                 { wch: 15 }, // Jam
@@ -4648,15 +4653,26 @@ function handleRequest(e) {
             }, 2000);
         }
 
+        // Default configuration values
+        const defaultConfig = {
+            deploymentId: 'AKfycbzZKzMm-BPA3DS9PK-hpH7orcPRFiNdyj5Fj8K6jWtyTOOiv0KMQTOXPiNyD6F-S6bOig',
+            webAppUrl: 'https://script.google.com/macros/s/AKfycbzZKzMm-BPA3DS9PK-hpH7orcPRFiNdyj5Fj8K6jWtyTOOiv0KMQTOXPiNyD6F-S6bOig/exec',
+            attendanceSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=0#gid=0',
+            studentsSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=174381718#gid=174381718',
+            teachersSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=268200759#gid=268200759',
+            subjectsSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=1293757566#gid=1293757566',
+            classesSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=846564730#gid=846564730'
+        };
+
         // Settings functions
         function loadSettings() {
-            document.getElementById('deploymentId').value = localStorage.getItem('deploymentId') || '';
-            document.getElementById('webAppUrl').value = localStorage.getItem('webAppUrl') || '';
-            document.getElementById('attendanceSheetUrl').value = localStorage.getItem('attendanceSheetUrl') || '';
-            document.getElementById('studentsSheetUrl').value = localStorage.getItem('studentsSheetUrl') || '';
-            document.getElementById('teachersSheetUrl').value = localStorage.getItem('teachersSheetUrl') || '';
-            document.getElementById('subjectsSheetUrl').value = localStorage.getItem('subjectsSheetUrl') || '';
-            document.getElementById('classesSheetUrl').value = localStorage.getItem('classesSheetUrl') || '';
+            document.getElementById('deploymentId').value = localStorage.getItem('deploymentId') || defaultConfig.deploymentId;
+            document.getElementById('webAppUrl').value = localStorage.getItem('webAppUrl') || defaultConfig.webAppUrl;
+            document.getElementById('attendanceSheetUrl').value = localStorage.getItem('attendanceSheetUrl') || defaultConfig.attendanceSheetUrl;
+            document.getElementById('studentsSheetUrl').value = localStorage.getItem('studentsSheetUrl') || defaultConfig.studentsSheetUrl;
+            document.getElementById('teachersSheetUrl').value = localStorage.getItem('teachersSheetUrl') || defaultConfig.teachersSheetUrl;
+            document.getElementById('subjectsSheetUrl').value = localStorage.getItem('subjectsSheetUrl') || defaultConfig.subjectsSheetUrl;
+            document.getElementById('classesSheetUrl').value = localStorage.getItem('classesSheetUrl') || defaultConfig.classesSheetUrl;
 
 
             // Load configuration lists
@@ -5967,7 +5983,7 @@ function handleRequest(e) {
             }, 3000);
         }
     </script>
-    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ee3f6fc4d8f8ff',t:'MTc1NTE1MTM5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ef31e8c1cafdea',t:'MTc1NTE2MTMyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
 
 </html>
