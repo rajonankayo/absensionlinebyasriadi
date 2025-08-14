@@ -794,10 +794,6 @@
                             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                             💾 Simpan Pengaturan
                         </button>
-                        <button onclick="loadDataFromSheetsManual()"
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
-                            📥 Load Data dari Sheets
-                        </button>
                     </div>
 
                     <div id="connectionStatus" class="hidden p-4 rounded-lg">
@@ -1901,6 +1897,9 @@ function handleRequest(e) {
             document.getElementById('reportStartDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('reportEndDate').value = new Date().toISOString().split('T')[0];
 
+            // Initialize default configuration if not exists
+            initializeDefaultConfiguration();
+
             // Initialize students data if empty and no Google Sheets config
             if (Object.keys(studentsData).length === 0 && !localStorage.getItem('deploymentId')) {
                 studentsData = sampleStudents;
@@ -1910,20 +1909,47 @@ function handleRequest(e) {
             // Populate dropdowns
             populateDropdowns();
 
-            // Load data from Google Sheets if configured (silent background process)
+            // Always try to load data from Google Sheets using default or stored configuration
             const webAppUrl = localStorage.getItem('webAppUrl') || defaultConfig.webAppUrl;
 
             if (webAppUrl) {
-                // Load data silently in background without showing errors on login page
-                loadDataFromSheetsSilent().then((loadedCount) => {
-                    if (loadedCount > 0) {
-                        console.log(`✅ Background data load successful: ${loadedCount} sheets loaded`);
+                console.log('🔄 Memulai sinkronisasi otomatis dengan Google Sheets...');
+                console.log('🌐 Web App URL:', webAppUrl);
+
+                // Show loading indicator on login page
+                showLoginLoadingStatus('🔄 Menyinkronkan dengan Google Sheets...', 'info');
+
+                // Load data with enhanced error handling and user feedback
+                loadDataFromSheetsOnStartup().then((result) => {
+                    if (result.loadedCount > 0) {
+                        console.log(`✅ Sinkronisasi berhasil: ${result.loadedCount} sheets dimuat`);
                         populateDropdowns(); // Refresh dropdowns with new data
+                        showLoginLoadingStatus(`✅ Sinkronisasi berhasil! ${result.loadedCount} data dimuat dari Google Sheets.`, 'success');
+
+                        // Hide status after 3 seconds
+                        setTimeout(() => {
+                            hideLoginLoadingStatus();
+                        }, 3000);
+                    } else {
+                        console.log('ℹ️ Tidak ada data baru dimuat dari Google Sheets');
+                        showLoginLoadingStatus('ℹ️ Menggunakan data lokal (tidak ada data baru dari Google Sheets)', 'info');
+
+                        // Hide status after 2 seconds
+                        setTimeout(() => {
+                            hideLoginLoadingStatus();
+                        }, 2000);
                     }
                 }).catch((error) => {
-                    console.log(`ℹ️ Background data load skipped: ${error.message}`);
-                    // Don't show error notifications during app initialization
+                    console.error('❌ Sinkronisasi gagal:', error);
+                    showLoginLoadingStatus('⚠️ Sinkronisasi gagal, menggunakan data lokal', 'warning');
+
+                    // Hide status after 3 seconds
+                    setTimeout(() => {
+                        hideLoginLoadingStatus();
+                    }, 3000);
                 });
+            } else {
+                console.log('ℹ️ Tidak ada konfigurasi Google Sheets, menggunakan data lokal');
             }
         });
 
@@ -3607,6 +3633,270 @@ function handleRequest(e) {
                 });
         }
 
+        // Show loading status on login page
+        function showLoginLoadingStatus(message, type) {
+            // Create or update loading status element
+            let statusElement = document.getElementById('loginLoadingStatus');
+            if (!statusElement) {
+                statusElement = document.createElement('div');
+                statusElement.id = 'loginLoadingStatus';
+                statusElement.className = 'mt-4 p-3 rounded-lg text-sm text-center';
+
+                // Insert after the login form
+                const loginForm = document.querySelector('#loginScreen form');
+                if (loginForm && loginForm.parentNode) {
+                    loginForm.parentNode.insertBefore(statusElement, loginForm.nextSibling);
+                }
+            }
+
+            // Set appropriate styling based on type
+            let bgClass = 'bg-blue-50 text-blue-700 border border-blue-200';
+            if (type === 'success') {
+                bgClass = 'bg-green-50 text-green-700 border border-green-200';
+            } else if (type === 'warning') {
+                bgClass = 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-50 text-red-700 border border-red-200';
+            }
+
+            statusElement.className = `mt-4 p-3 rounded-lg text-sm text-center ${bgClass}`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+        }
+
+        // Hide loading status on login page
+        function hideLoginLoadingStatus() {
+            const statusElement = document.getElementById('loginLoadingStatus');
+            if (statusElement) {
+                statusElement.style.display = 'none';
+            }
+        }
+
+        // Enhanced version for startup sync with better user feedback
+        function loadDataFromSheetsOnStartup() {
+            const webAppUrl = localStorage.getItem('webAppUrl') || defaultConfig.webAppUrl;
+
+            if (!webAppUrl) {
+                return Promise.resolve({ loadedCount: 0, message: 'No web app URL configured' });
+            }
+
+            const studentsSheetUrl = localStorage.getItem('studentsSheetUrl') || defaultConfig.studentsSheetUrl;
+            const teachersSheetUrl = localStorage.getItem('teachersSheetUrl') || defaultConfig.teachersSheetUrl;
+            const subjectsSheetUrl = localStorage.getItem('subjectsSheetUrl') || defaultConfig.subjectsSheetUrl;
+            const classesSheetUrl = localStorage.getItem('classesSheetUrl') || defaultConfig.classesSheetUrl;
+            const timeSlotsSheetUrl = localStorage.getItem('timeSlotsSheetUrl');
+
+            const loadPromises = [];
+
+            // Helper function to make request with enhanced error handling
+            const makeLoadRequestStartup = async (payload, type) => {
+                try {
+                    console.log(`🔄 Loading ${type} data...`);
+
+                    // Try POST first with shorter timeout for startup
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                    const response = await fetch(webAppUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        mode: 'cors',
+                        credentials: 'omit',
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const text = await response.text();
+                    let data;
+
+                    try {
+                        data = JSON.parse(text);
+                    } catch {
+                        if (text.includes('success') || text.includes('berhasil')) {
+                            data = { success: true, data: type === 'students' ? {} : [] };
+                        } else {
+                            throw new Error('Response tidak valid');
+                        }
+                    }
+
+                    console.log(`✅ ${type} data loaded successfully`);
+                    return { type, data };
+
+                } catch (error) {
+                    console.log(`⚠️ Failed to load ${type} data:`, error.message);
+
+                    // Try GET method as fallback with shorter timeout
+                    try {
+                        const params = new URLSearchParams({
+                            action: payload.action,
+                            data: JSON.stringify(payload)
+                        });
+
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+                        const response = await fetch(`${webAppUrl}?${params}`, {
+                            method: 'GET',
+                            mode: 'cors',
+                            credentials: 'omit',
+                            signal: controller.signal
+                        });
+
+                        clearTimeout(timeoutId);
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+
+                        const text = await response.text();
+                        let data;
+
+                        try {
+                            data = JSON.parse(text);
+                        } catch {
+                            if (text.includes('success') || text.includes('berhasil')) {
+                                data = { success: true, data: type === 'students' ? {} : [] };
+                            } else {
+                                throw new Error('Response tidak valid');
+                            }
+                        }
+
+                        console.log(`✅ ${type} data loaded via GET fallback`);
+                        return { type, data };
+                    } catch (getError) {
+                        console.log(`❌ Both POST and GET failed for ${type}:`, getError.message);
+                        return { type, data: { success: false, data: type === 'students' ? {} : [] } };
+                    }
+                }
+            };
+
+            // Load students if URL provided
+            if (studentsSheetUrl) {
+                loadPromises.push(
+                    makeLoadRequestStartup({
+                        action: 'loadStudents',
+                        studentsSheetUrl: studentsSheetUrl
+                    }, 'students')
+                );
+            }
+
+            // Load teachers if URL provided
+            if (teachersSheetUrl) {
+                loadPromises.push(
+                    makeLoadRequestStartup({
+                        action: 'loadTeachers',
+                        teachersSheetUrl: teachersSheetUrl
+                    }, 'teachers')
+                );
+            }
+
+            // Load subjects if URL provided
+            if (subjectsSheetUrl) {
+                loadPromises.push(
+                    makeLoadRequestStartup({
+                        action: 'loadSubjects',
+                        subjectsSheetUrl: subjectsSheetUrl
+                    }, 'subjects')
+                );
+            }
+
+            // Load classes if URL provided
+            if (classesSheetUrl) {
+                loadPromises.push(
+                    makeLoadRequestStartup({
+                        action: 'loadClasses',
+                        classesSheetUrl: classesSheetUrl
+                    }, 'classes')
+                );
+            }
+
+            // Load time slots if URL provided
+            if (timeSlotsSheetUrl) {
+                loadPromises.push(
+                    makeLoadRequestStartup({
+                        action: 'loadTimeSlots',
+                        timeSlotsSheetUrl: timeSlotsSheetUrl
+                    }, 'timeSlots')
+                );
+            }
+
+            if (loadPromises.length === 0) {
+                return Promise.resolve({ loadedCount: 0, message: 'No sheets configured for loading' });
+            }
+
+            return Promise.all(loadPromises)
+                .then(results => {
+                    let loadedCount = 0;
+                    const loadedTypes = [];
+
+                    results.forEach(result => {
+                        if (result.data.success) {
+                            switch (result.type) {
+                                case 'students':
+                                    if (result.data.data && Object.keys(result.data.data).length > 0) {
+                                        studentsData = result.data.data;
+                                        localStorage.setItem('studentsData', JSON.stringify(studentsData));
+                                        loadedCount++;
+                                        loadedTypes.push('Data Siswa');
+                                    }
+                                    break;
+                                case 'teachers':
+                                    if (result.data.data && Object.keys(result.data.data).length > 0) {
+                                        // Merge with existing users, don't replace completely
+                                        Object.assign(users, result.data.data);
+                                        loadedCount++;
+                                        loadedTypes.push('Data Guru');
+                                    }
+                                    break;
+                                case 'subjects':
+                                    if (result.data.data && result.data.data.length > 0) {
+                                        subjectConfig = result.data.data;
+                                        localStorage.setItem('subjectConfig', JSON.stringify(subjectConfig));
+                                        loadedCount++;
+                                        loadedTypes.push('Mata Pelajaran');
+                                    }
+                                    break;
+                                case 'classes':
+                                    if (result.data.data && result.data.data.length > 0) {
+                                        classConfig = result.data.data;
+                                        localStorage.setItem('classConfig', JSON.stringify(classConfig));
+                                        loadedCount++;
+                                        loadedTypes.push('Data Kelas');
+                                    }
+                                    break;
+                                case 'timeSlots':
+                                    if (result.data.data && result.data.data.length > 0) {
+                                        timeSlotConfig = result.data.data;
+                                        localStorage.setItem('timeSlotConfig', JSON.stringify(timeSlotConfig));
+                                        loadedCount++;
+                                        loadedTypes.push('Jam Pelajaran');
+                                    }
+                                    break;
+                            }
+                        }
+                    });
+
+                    return {
+                        loadedCount,
+                        loadedTypes,
+                        message: loadedCount > 0 ? `Berhasil memuat: ${loadedTypes.join(', ')}` : 'Tidak ada data baru'
+                    };
+                })
+                .catch(error => {
+                    console.error('Startup sync error:', error);
+                    return Promise.reject({
+                        loadedCount: 0,
+                        message: `Gagal sinkronisasi: ${error.message}`
+                    });
+                });
+        }
+
         // Silent version of loadDataFromSheets (no error notifications)
         function loadDataFromSheetsSilent() {
             const webAppUrl = localStorage.getItem('webAppUrl') ||
@@ -4663,6 +4953,34 @@ function handleRequest(e) {
             subjectsSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=1293757566#gid=1293757566',
             classesSheetUrl: 'https://docs.google.com/spreadsheets/d/1I-HamlApJnN94hb0krBp1Kk-940GpoYyJxeuBj5mFr4/edit?gid=846564730#gid=846564730'
         };
+
+        // Initialize default configuration if not exists
+        function initializeDefaultConfiguration() {
+            // Set default configuration if not already set
+            if (!localStorage.getItem('deploymentId')) {
+                localStorage.setItem('deploymentId', defaultConfig.deploymentId);
+            }
+            if (!localStorage.getItem('webAppUrl')) {
+                localStorage.setItem('webAppUrl', defaultConfig.webAppUrl);
+            }
+            if (!localStorage.getItem('attendanceSheetUrl')) {
+                localStorage.setItem('attendanceSheetUrl', defaultConfig.attendanceSheetUrl);
+            }
+            if (!localStorage.getItem('studentsSheetUrl')) {
+                localStorage.setItem('studentsSheetUrl', defaultConfig.studentsSheetUrl);
+            }
+            if (!localStorage.getItem('teachersSheetUrl')) {
+                localStorage.setItem('teachersSheetUrl', defaultConfig.teachersSheetUrl);
+            }
+            if (!localStorage.getItem('subjectsSheetUrl')) {
+                localStorage.setItem('subjectsSheetUrl', defaultConfig.subjectsSheetUrl);
+            }
+            if (!localStorage.getItem('classesSheetUrl')) {
+                localStorage.setItem('classesSheetUrl', defaultConfig.classesSheetUrl);
+            }
+
+            console.log('✅ Konfigurasi default telah diinisialisasi');
+        }
 
         // Settings functions
         function loadSettings() {
@@ -5983,7 +6301,7 @@ function handleRequest(e) {
             }, 3000);
         }
     </script>
-    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ef31e8c1cafdea',t:'MTc1NTE2MTMyNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
+    <script>(function () { function c() { var b = a.contentDocument || a.contentWindow.document; if (b) { var d = b.createElement('script'); d.innerHTML = "window.__CF$cv$params={r:'96ef7237254ff8ec',t:'MTc1NTE2Mzk1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);"; b.getElementsByTagName('head')[0].appendChild(d) } } if (document.body) { var a = document.createElement('iframe'); a.height = 1; a.width = 1; a.style.position = 'absolute'; a.style.top = 0; a.style.left = 0; a.style.border = 'none'; a.style.visibility = 'hidden'; document.body.appendChild(a); if ('loading' !== document.readyState) c(); else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c); else { var e = document.onreadystatechange || function () { }; document.onreadystatechange = function (b) { e(b); 'loading' !== document.readyState && (document.onreadystatechange = e, c()) } } } })();</script>
 </body>
 
 </html>
