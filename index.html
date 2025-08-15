@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         .scanner-overlay {
             position: fixed;
@@ -126,7 +127,6 @@
                 <h1 class="text-3xl font-bold text-gray-800">Sistem Absensi Online</h1>
                 <h2 class="text-xl font-semibold text-blue-700 mt-2">SDS IT Adzkia 1 Padang</h2>
                 <p class="text-gray-600 mt-2">Login Guru/Admin</p>
-                <p class="text-xs text-gray-500 mt-1 italic">Programmer By: Asriadi, S.PdI</p>
             </div>
 
             <form onsubmit="login(event)" class="space-y-6">
@@ -152,21 +152,13 @@
 
             <div class="mt-6 text-center text-sm text-gray-600">
                 <div class="mt-2 p-2 bg-blue-50 rounded text-xs">
-                    <p><strong>💡 Jika menggunakan Google Sheets:</strong></p>
-                    <p>1. Setup Apps Script dan URL sheets</p>
-                    <p>2. Klik "Load Data Guru" di tab Pengaturan</p>
-                    <p>3. Login dengan data dari sheet "Data Guru"</p>
+                    <p><strong>💡 Aplikasi ini menggungakan Google Sheets sebagai databasenya.
+                        </strong></p>
+                    <p class="text-xs text-blue-500 mt-1 italic">Programmer By: Asriadi, S.PdI</p>
                 </div>
             </div>
 
-            <!-- Apps Script Setup Info -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 class="font-semibold text-blue-800 mb-2">📋 Setup Google Apps Script</h4>
-                <p class="text-xs text-blue-700">
-                    Untuk menggunakan integrasi Google Sheets, buat Google Apps Script dan deploy sebagai web app.
-                    Masukkan deployment ID di pengaturan sistem.
-                </p>
-            </div>
+
         </div>
     </div>
 
@@ -547,15 +539,15 @@
             <!-- QR Code Display Section -->
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">QR Code Siswa</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="studentsQRContainer">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center"
+                    id="studentsQRContainer">
                     <!-- Student QR codes will be generated here -->
                 </div>
             </div>
         </div>
 
         <!-- Add/Edit Student Modal -->
-        <div id="studentModal"
-            class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div id="studentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -616,8 +608,7 @@
         </div>
 
         <!-- Delete Confirmation Modal -->
-        <div id="deleteModal"
-            class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm">
                 <div class="p-6">
                     <div class="text-center">
@@ -642,8 +633,7 @@
         </div>
 
         <!-- Add/Edit Teacher Modal -->
-        <div id="teacherModal"
-            class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div id="teacherModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -2378,34 +2368,41 @@ function handleRequest(e) {
                 }
 
                 div.innerHTML = `
-                    <div class="flex items-center justify-between w-full">
-                        <div class="flex-shrink-0 w-64">
-                            <p class="font-medium text-gray-900">${student.name}</p>
-                            <p class="text-sm text-gray-500">ID: ${student.id}</p>
-                            ${hasExistingData ? `<p class="text-xs text-blue-600">📋 Data sudah ada${existingRecord.teacher ? ` (${existingRecord.teacher})` : ''}</p>` : ''}
-                        </div>
-                        <div class="flex space-x-2 flex-shrink-0">
-                            <button onclick="setAttendanceStatus('${student.id}', 'Hadir')" 
-                                    class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition w-16 text-center">
-                                Hadir
-                            </button>
-                            <button onclick="setAttendanceStatus('${student.id}', 'Sakit')" 
-                                    class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition w-16 text-center">
-                                Sakit
-                            </button>
-                            <button onclick="setAttendanceStatus('${student.id}', 'Izin')" 
-                                    class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition w-16 text-center">
-                                Izin
-                            </button>
-                            <button onclick="setAttendanceStatus('${student.id}', 'Alpha')" 
-                                    class="px-3 py-1 text-xs rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition w-16 text-center">
-                                Alpha
-                            </button>
-                        </div>
-                        <div id="status-${student.id}" class="flex-shrink-0 w-20 px-3 py-1 text-xs rounded-full ${statusClass} text-center">
-                            ${statusDisplay}
-                        </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-2 p-2 border-b">
+                    <!-- Bagian Nama -->
+                    <div class="flex-shrink-0 sm:w-64">
+                        <p class="font-medium text-gray-900">${student.name}</p>
+                        <p class="text-sm text-gray-500">Nis: ${student.id}</p>
+                        ${hasExistingData ? `<p class="text-xs text-blue-600">📋 Data sudah ada${existingRecord.teacher ? ` (${existingRecord.teacher})` : ''}</p>` : ''}
                     </div>
+
+                    <!-- Tombol -->
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setAttendanceStatus('${student.id}', 'Hadir')" 
+                                class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 hover:bg-green-200 transition min-w-[64px] text-center">
+                            Hadir
+                        </button>
+                        <button onclick="setAttendanceStatus('${student.id}', 'Sakit')" 
+                                class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition min-w-[64px] text-center">
+                            Sakit
+                        </button>
+                        <button onclick="setAttendanceStatus('${student.id}', 'Izin')" 
+                                class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition min-w-[64px] text-center">
+                            Izin
+                        </button>
+                        <button onclick="setAttendanceStatus('${student.id}', 'Alpha')" 
+                                class="px-3 py-1 text-xs rounded-full bg-red-100 text-red-800 hover:bg-red-200 transition min-w-[64px] text-center">
+                            Alpha
+                        </button>
+                    </div>
+
+                    <!-- Status -->
+                    <div id="status-${student.id}" 
+                        class="flex-shrink-0 px-3 py-1 text-xs rounded-full ${statusClass} text-center mt-2 sm:mt-0">
+                        ${statusDisplay}
+                    </div>
+                </div>
+
                 `;
                 container.appendChild(div);
             });
@@ -4970,7 +4967,7 @@ function handleRequest(e) {
             showNotification('Data siswa berhasil dihapus!', 'success');
         }
 
-        // Load students QR codes
+        // Load students QR codes (QR code SVG/canvas + download button)
         function loadStudentsQR() {
             const container = document.getElementById('studentsQRContainer');
             container.innerHTML = '';
@@ -4982,25 +4979,36 @@ function handleRequest(e) {
                     hasStudents = true;
                     const div = document.createElement('div');
                     div.className = 'bg-white border border-gray-200 rounded-lg p-4 text-center';
+
+                    // Tempat QR code akan di-generate
+                    const qrId = `qr-${student.id}`;
                     div.innerHTML = `
-                        <div class="mb-4">
-                            <div class="w-32 h-32 mx-auto bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="text-2xl mb-2">📱</div>
-                                    <div class="text-xs text-gray-500">QR Code</div>
-                                    <div class="text-xs font-mono">${student.qr}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <h3 class="font-semibold text-gray-800">${student.name}</h3>
-                        <p class="text-sm text-gray-600">ID: ${student.id}</p>
-                        <p class="text-sm text-gray-600">Kelas: ${className}</p>
-                        <button onclick="generateQRCode('${student.qr}', '${student.name}')" 
-                                class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
-                            Generate QR
-                        </button>
-                    `;
+                    <div class="mb-4">
+                        <div id="${qrId}" class="mx-auto flex justify-center items-center" style="text-align:center;"></div>
+                    </div>
+                    <h3 class="font-semibold text-gray-800">${student.name}</h3>
+                    <p class="text-sm text-gray-600">ID: ${student.id}</p>
+                    <p class="text-sm text-gray-600">Kelas: ${className}</p>
+                    <button onclick="downloadQRCode('${qrId}', '${student.name}')"
+                            class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+                        Download QR
+                    </button>
+                `;
                     container.appendChild(div);
+
+                    // Generate QR code
+                    setTimeout(() => {
+                        const qrContainer = document.getElementById(qrId);
+                        qrContainer.innerHTML = '';
+                        new QRCode(qrContainer, {
+                            text: student.qr,
+                            width: 128,
+                            height: 128,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    }, 0);
                 });
             });
 
@@ -5009,19 +5017,21 @@ function handleRequest(e) {
             }
         }
 
-        // Generate QR Code (placeholder function)
-        function generateQRCode(qrData, studentName) {
-            showNotification(`QR Code untuk ${studentName} berhasil di-generate!`, 'success');
-            // In real implementation, use QR code library like qrcode.js
+        // Download QR code as image
+        function downloadQRCode(qrId, studentName) {
+            const qrDiv = document.getElementById(qrId);
+            // Cari <img> di dalam qrDiv (qrcodejs default output)
+            const img = qrDiv.querySelector('img');
+            if (img) {
+                const link = document.createElement('a');
+                link.href = img.src;
+                link.download = `QR-${studentName.replace(/\s+/g, '_')}.png`;
+                link.click();
+            } else {
+                showNotification('Gagal download QR. Coba reload halaman.', 'error');
+            }
         }
 
-        // Generate all QR codes
-        function generateAllQRCodes() {
-            showNotification('Generating semua QR Code...', 'info');
-            setTimeout(() => {
-                showNotification('Semua QR Code berhasil di-generate!', 'success');
-            }, 2000);
-        }
 
         // Default configuration values
         const defaultConfig = {
@@ -6133,7 +6143,9 @@ function handleRequest(e) {
             currentEditingTeacher = null;
             document.getElementById('teacherModalTitle').textContent = 'Tambah Guru Baru';
             document.getElementById('teacherForm').reset();
-            document.getElementById('teacherModal').classList.remove('hidden');
+            const modal = document.getElementById('teacherModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
         function editTeacher(username) {
@@ -6207,10 +6219,12 @@ function handleRequest(e) {
             } else {
                 showNotification('Guru baru berhasil ditambahkan!', 'success');
             }
-        }
-
-        function closeTeacherModal() {
-            document.getElementById('teacherModal').classList.add('hidden');
+            function closeTeacherModal() {
+                const modal = document.getElementById('teacherModal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                currentEditingTeacher = null;
+            }
             currentEditingTeacher = null;
         }
 
