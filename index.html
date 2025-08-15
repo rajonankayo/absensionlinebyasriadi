@@ -11,6 +11,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+        .sync-icon {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .scanner-overlay {
             position: fixed;
             top: 0;
@@ -230,10 +245,10 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran / Kegiatan</label>
                         <select id="subjectSelect" onchange="loadStudents()"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="">Pilih Mata Pelajaran</option>
+                            <option value="">Pilih Mata Pelajaran / Kegiatan</option>
                             <option value="Matematika">Matematika</option>
                             <option value="Fisika">Fisika</option>
                             <option value="Kimia">Kimia</option>
@@ -322,10 +337,10 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mata Pelajaran / Kegiatan</label>
                         <select id="reportSubject"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="">Semua Mata Pelajaran</option>
+                            <option value="">Semua Mata Pelajaran / Kegiatan</option>
                             <option value="Matematika">Matematika</option>
                             <option value="Fisika">Fisika</option>
                             <option value="Kimia">Kimia</option>
@@ -443,7 +458,7 @@
                                     NIS</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Mata Pelajaran</th>
+                                    Mata Pelajaran / Kegiatan</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status</th>
@@ -791,7 +806,7 @@
                     </div>
                 </div>
 
-                <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg hidden">
                     <h3 class="font-semibold text-blue-800 mb-2">📋 Panduan Setup Google Apps Script</h3>
                     <ol class="text-sm text-blue-700 space-y-2">
                         <li><strong>1. Buat Google Sheets baru:</strong>
@@ -829,7 +844,7 @@
                 </div>
 
                 <!-- Troubleshooting Guide -->
-                <div class="mt-6 p-4 bg-red-50 rounded-lg">
+                <div class="mt-6 p-4 bg-red-50 rounded-lg hidden">
                     <h3 class="font-semibold text-red-800 mb-2">🔧 Troubleshooting "Failed to fetch"</h3>
                     <div class="text-sm text-red-700 space-y-2">
                         <p><strong>Jika masih gagal koneksi, periksa hal berikut:</strong></p>
@@ -882,7 +897,7 @@
                 </div>
 
                 <!-- Apps Script Code Template -->
-                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg hidden">
                     <h4 class="font-semibold text-gray-800 mb-2">📄 Kode Google Apps Script (Versi Terbaru - Fixed)</h4>
                     <div class="bg-gray-800 text-green-400 p-4 rounded text-xs font-mono overflow-x-auto">
                         <pre>// Handle both GET and POST requests
@@ -1651,7 +1666,7 @@ function handleRequest(e) {
                 });
                 console.log('Added sample class data');
               } else if (config.name === 'Jam Pelajaran') {
-                ['07:00-07:45', '07:45-08:30', '08:30-09:15', '09:30-10:15', '10:15-11:00', '11:00-11:45'].forEach(timeSlot => {
+                ['07:20-07:50', '07:50-09:00', '09:00-10:10', '10:10-10:40', '10:40-11:50', '11:50-13:10', '13:10-14:20', '14:20-15:30', '15:30-16:30'].forEach(timeSlot => {
                   sheet.appendRow([timeSlot]);
                 });
                 console.log('Added sample time slot data');
@@ -1724,11 +1739,12 @@ function handleRequest(e) {
 
             <!-- Subject Configuration -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h2 class="text-xl font-bold text-gray-800 mb-6">Pengaturan Mata Pelajaran</h2>
+                <h2 class="text-xl font-bold text-gray-800 mb-6">Pengaturan Mata Pelajaran / Kegiatan</h2>
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Daftar Mata Pelajaran</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Daftar Mata Pelajaran /
+                            Kegiatan</label>
                         <div id="subjectListContainer" class="space-y-2 mb-4">
                             <!-- Subject list will be populated here -->
                         </div>
@@ -1738,7 +1754,7 @@ function handleRequest(e) {
                                 placeholder="Nama mata pelajaran baru">
                             <button onclick="addSubject()"
                                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                                Tambah Mata Pelajaran
+                                Tambah Mata Pelajaran / Kegiatan
                             </button>
                         </div>
                     </div>
@@ -1853,7 +1869,7 @@ function handleRequest(e) {
             'Matematika', 'Fisika', 'Kimia', 'Biologi', 'Bahasa Indonesia', 'Bahasa Inggris'
         ];
         let timeSlotConfig = JSON.parse(localStorage.getItem('timeSlotConfig')) || [
-            '07:00-07:45', '07:45-08:30', '08:30-09:15', '09:30-10:15', '10:15-11:00', '11:00-11:45'
+            '07:20-07:50', '07:50-09:00', '09:00-10:10', '10:10-10:40', '10:40-11:50', '11:50-13:10', '13:10-14:20', '14:20-15:30', '15:30-16:30'
         ];
 
         // Demo users
@@ -1906,8 +1922,11 @@ function handleRequest(e) {
                 console.log('🔄 Memulai sinkronisasi otomatis dengan Google Sheets...');
                 console.log('🌐 Web App URL:', webAppUrl);
 
-                // Show loading indicator on login page
-                showLoginLoadingStatus('🔄 Menyinkronkan dengan Google Sheets...', 'info');
+                // Tampilkan indikator loading dengan animasi berputar
+                showLoginLoadingStatus(
+                    '🔄 Menyinkronkan dengan Google Sheets...',
+                    'info'
+                );
 
                 // Load data with enhanced error handling and user feedback
                 loadDataFromSheetsOnStartup().then((result) => {
@@ -3712,8 +3731,10 @@ function handleRequest(e) {
 
         // Show loading status on login page
         function showLoginLoadingStatus(message, type) {
+
             // Create or update loading status element
             let statusElement = document.getElementById('loginLoadingStatus');
+
             if (!statusElement) {
                 statusElement = document.createElement('div');
                 statusElement.id = 'loginLoadingStatus';
@@ -3739,6 +3760,10 @@ function handleRequest(e) {
             statusElement.className = `mt-4 p-3 rounded-lg text-sm text-center ${bgClass}`;
             statusElement.textContent = message;
             statusElement.style.display = 'block';
+
+
+
+
         }
 
         // Hide loading status on login page
